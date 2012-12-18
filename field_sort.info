@@ -1,0 +1,5 @@
+name = "Views Fields Sort"
+description = "Sort views fields in ascending and descending way."
+core = 6.x
+package = Views
+dependencies[] = views

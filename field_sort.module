@@ -1,0 +1,295 @@
+<?php
+// $Id:
+
+// For musticolumn sorting // 
+function field_sort_views_query_alter(&$view, &$query) {
+
+	if($view->style_options['sortable'] == 1){
+		$query->orderby = array();
+		//dsm($_POST['items']);
+		if(is_array($_POST['items'])){ //to avoid foreach warning
+			$i=0;
+			foreach($_POST['items'] as $sort_field => $sort_field_data)
+			{
+				if($sort_field_data["order"])
+					$query->orderby[$i] = $sort_field." ".$sort_field_data["order"];
+				$i++;
+			}	
+		}
+
+	}
+
+
+
+}
+function field_sort_views_pre_render(&$view) {
+	if($view->style_options['sortable'] == 1){
+	 		$view->attachment_before = drupal_get_form("custom_sort_reorder_form",$view->field);
+		//	dsm($view->field,'field_sort_views_pre_render');
+ 	 	//	dsm($view->field['counter'],'field_sort_views_pre_render => counter');
+ 	 	//	dsm($view->field['nothing'],'field_sort_views_pre_render => nothing');
+ 	 	//	dsm($view->field['nothing_1'],'field_sort_views_pre_render => nothing_1');
+		//	dsm($_POST['items'],'field_sort_views_pre_render');
+ 	 		/* reordering view fields */
+ 	 		if($_POST['reorder_columns'])
+ 	 		{
+	 	 		if(is_array($_POST['items']))
+	 	 		{
+				$alias_map = array();
+	 	 		foreach($view->field as $column => $column_data) {
+				
+				    if(array_key_exists($column_data->field_alias, $alias_map)) {					
+					    foreach($alias_map as $key => $value) {
+						 $count =1;					
+						  $field_alias = $column_data->field_alias ."_". $count;
+						  if(!array_key_exists($field_alias,$alias_map)) {
+						    $alias_map[$field_alias] = $column; 	   
+						  }					     
+					     $count++; 						
+						}						
+						
+					}else {
+					 $alias_map[$column_data->field_alias] = $column; 
+					}
+					
+				}	
+			
+	 	 		foreach($_POST['items'] as $alias => $field){
+						$reorderred_fields_keys[] = $alias_map[$alias];
+						unset($alias_map[$alias]);
+				}
+                foreach($alias_map as $alias => $field)
+						$reorderred_fields_keys[] = $field;				
+						
+	 	 		
+				
+				foreach($reorderred_fields_keys as $column)
+					$reorderred_fields[$column] =  $view->field[$column];
+				
+				$view->field = $reorderred_fields;	
+				}
+			}
+ 	}
+ 	
+}
+
+function custom_sort_reorder_form($form_state,$fields) {           
+	$i = 0;
+	$alias_field = array();
+  foreach($fields as $sort_field){
+  
+    
+	if(in_array($sort_field->field_alias, $alias_field)) {							
+		$count = 1;
+		 for($f=0; $f<count($alias_field);$f++) {
+		   
+		   $field_alias = $sort_field->field_alias ."_". $count;
+		  if(!in_array($field_alias,$alias_field)) {
+			$alias_field[] = $field_alias;
+            $sort_field->field_alias = 	$field_alias;
+            break; 			
+		  }
+          $count++;		  
+		 }				
+	 }else {
+	    $alias_field[] =  $sort_field->field_alias;
+	 }	
+
+
+  		if(!$sort_field->options['exclude'] && $sort_field->options['field_sort'] == 1)
+  			$sort_fields[] = array('id'=>$sort_field->field_alias,'title'=>$sort_field->options['label'],'group'=> $sort_field->definition['group'],'alias'=>$sort_field->options['id ']);
+
+ }
+
+  $form = array();
+  
+  $form['#action'] = '';
+
+  $form['#prefix'] = "<fieldset class='collapsible collapsed'><legend><a href='#'>Sort</a>
+							</legend>";
+  $form['#postfix'] = "</fieldset>";
+	  
+	drupal_add_js('misc/collapse.js');  
+  
+  $form['#redirect'] = FALSE;
+  $form['items'] = array();
+  $form['items']['#tree'] = TRUE;
+
+  foreach ($sort_fields as $item) {
+  //filter for php custom code field anf global custom field. disaple sorting action.
+if($item['group'] != 'Global' && $item['group'] != 'Customfield' ) {
+    $form['items'][$item['id']] = array(
+      'title' => array(
+        '#type' => 'markup',
+        '#value' => $item['title'],
+      ),
+      'weight' => array(
+        '#type' => 'weight',
+        '#delta' => count($sort_fields),
+        '#default_value' => isset($_POST['items'][$item['id']]['weight']) ? $_POST['items'][$item['id']]['weight'] : 0,
+      ),
+      'order' => array(
+        '#type' => 'select',
+        '#options' => array(""=>"Unsorted","ASC"=>"Ascending","DESC"=>"Descending"),
+      ),
+	  'id' => array(
+        '#type' => 'hidden',
+        '#value' => $item['alias']
+      ),
+    );
+ }else {
+    
+	$form['items'][$item['id']] = array(
+      'title' => array(
+        '#type' => 'markup',
+        '#value' => $item['title'],
+      ),
+      'weight' => array(
+        '#type' => 'weight',
+        '#delta' => count($sort_fields),
+        '#default_value' => isset($_POST['items'][$item['id']]['weight']) ? $_POST['items'][$item['id']]['weight'] : 0,
+      ),
+      'order' => array(
+        '#type' => 'markup',
+        '#value' => 'not applicable',
+      ),
+	  'id' => array(
+        '#type' => 'hidden',
+        '#value' => $item['alias']
+      ),
+    );
+	
+ }
+ 
+  }
+
+	$form['reorder_columns'] =array(
+	 '#title' => t('Reorder columns in report'),
+    '#type' => 'checkbox',
+    '#default_value' => isset($_POST['reorder_columns']) ? $_POST['reorder_columns'] : 0,
+  );
+	
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Apply'),
+  );
+ 
+  return $form;
+ // }//END of checking sortable field is set or not.
+}
+
+function field_sort_theme() {
+	
+  return array(
+    'custom_sort_reorder_form' => array(
+      'arguments' => array('form' => NULL),
+    ),
+  );
+} 
+
+function field_sort_custom_sort_reorder_form($form) {
+	
+  drupal_add_tabledrag('draggable-table', 'order', 'sibling', 'weight-group');
+  
+  $header = array('Sort order','Sort by', 'Weight');
+  
+  if(is_array($_POST['items']))
+  	$items = $_POST['items'];
+  else
+  	$items = array_flip(element_children($form['items']));
+  	
+  foreach ( $items as $key => $item) {
+    $element = &$form['items'][$key];
+    $element['weight']['#attributes']['class'] = 'weight-group';
+    $row = array();
+    $row[] = drupal_render($element['title']);
+    $row[] = drupal_render($element['order']);
+    $row[] = drupal_render($element['weight']);
+    $rows[] = array('data' => $row, 'class' => 'draggable');
+  }
+  $output = theme('table', $header, $rows, array('id' => 'draggable-table'));
+  $output .= drupal_render($form);
+  return $output;
+}
+
+function theme_custom_sort_reorder_form($form) {
+	
+  drupal_add_tabledrag('draggable-table', 'order', 'sibling', 'weight-group');
+  
+  $header = array('Column order','Sort by', 'Weight');
+  
+  if(is_array($_POST['items']))
+  	$items = $_POST['items'];
+  else
+  	$items = array_flip(element_children($form['items']));
+  	
+  foreach ( $items as $key => $item) {
+    $element = &$form['items'][$key];
+    $element['weight']['#attributes']['class'] = 'weight-group';
+    $row = array();
+    $row[] = drupal_render($element['title']);
+    $row[] = drupal_render($element['order']);
+    $row[] = drupal_render($element['weight']);
+    $rows[] = array('data' => $row, 'class' => 'draggable');
+  }
+  $output = theme('table', $header, $rows, array('id' => 'draggable-table'));
+  $output .= drupal_render($form);
+  return $output;
+}
+
+
+function field_sort_form_alter(&$form, &$form_state, $form_id) {
+//$field = explode('-', $form['#section']);
+//if(!in_array('nothing', $field, true) ){
+ if($form_id == 'views_ui_config_item_form') {
+    $value = 0;
+   if($form_state['handler']->options['field_sort']){
+    $value = $form_state['handler']->options['field_sort']; 
+   }
+  
+  
+   $section = $form['#section'];
+   $form['options']['field_sort'] = array (
+   '#type' => 'checkbox', 
+   '#title' => t('Field Sortable'), 
+   '#weight' => 3, 
+   '#default_value' => $value,    
+   '#description' => t('Check this box to display this field in Sort Section.i.e Make Sort By'),
+
+    );
+} 
+ 
+	
+ 
+ //}
+ 
+  if($form_id == 'views_ui_edit_display_form' && $form['#help_topic'] == 'style-table') {
+   
+	$sortable = 0;
+   if($form_state['view']->display_handler->options['style_options']['sortable']){
+    $sortable = $form_state['view']->display_handler->options['style_options']['sortable']; 
+   } 
+	$form['style_options']['sortable'] = array (
+	   '#type' => 'checkbox', 
+	   '#title' => t('Sortable'), 
+	   '#weight' => 3, 
+	   '#default_value' => $sortable,    
+	   '#description' => t('Check this box to display this field in Sort Section.i.e Make Sort By'),
+
+    );
+  }
+  
+  return $form;
+ } 
+ 
+/*
+ * Implements hook_backgroundfield_alter()
+ */
+function field_sort_backgroundfield_alter(&$settings, $entity) {
+  if (isset($entity->view) && $entity->view->name== 'slideshow_block') {
+    // Add code here to determine which row this background applies to.
+    // The $entity->view object has all the information on your slideshow view.
+    // Then reset the css selector to the proper slide:
+    $settings['css_selector'] = '#views_slideshow_cycle_div_slideshow_block-block_1_0';
+  }
+}
