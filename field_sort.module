@@ -17,10 +17,8 @@ function field_sort_views_query_alter(&$view, &$query) {
 		}
 
 	}
-
-
-
 }
+
 function field_sort_views_pre_render(&$view) {
 	if($view->style_options['sortable'] == 1){
 	 		$view->attachment_before = drupal_get_form("custom_sort_reorder_form",$view->field);
