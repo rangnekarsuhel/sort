@@ -1,6 +1,5 @@
 <?php
 // $Id:
-
 // For musticolumn sorting // 
 function field_sort_views_query_alter(&$view, &$query) {
 
@@ -25,11 +24,6 @@ function field_sort_views_query_alter(&$view, &$query) {
 function field_sort_views_pre_render(&$view) {
 	if($view->style_options['sortable'] == 1){
 	 		$view->attachment_before = drupal_get_form("custom_sort_reorder_form",$view->field);
-		//	dsm($view->field,'field_sort_views_pre_render');
- 	 	//	dsm($view->field['counter'],'field_sort_views_pre_render => counter');
- 	 	//	dsm($view->field['nothing'],'field_sort_views_pre_render => nothing');
- 	 	//	dsm($view->field['nothing_1'],'field_sort_views_pre_render => nothing_1');
-		//	dsm($_POST['items'],'field_sort_views_pre_render');
  	 		/* reordering view fields */
  	 		if($_POST['reorder_columns'])
  	 		{
@@ -175,7 +169,6 @@ if($item['group'] != 'Global' && $item['group'] != 'Customfield' ) {
   );
  
   return $form;
- // }//END of checking sortable field is set or not.
 }
 
 function field_sort_theme() {
@@ -239,8 +232,7 @@ function theme_custom_sort_reorder_form($form) {
 
 
 function field_sort_form_alter(&$form, &$form_state, $form_id) {
-//$field = explode('-', $form['#section']);
-//if(!in_array('nothing', $field, true) ){
+
  if($form_id == 'views_ui_config_item_form') {
     $value = 0;
    if($form_state['handler']->options['field_sort']){
@@ -258,10 +250,6 @@ function field_sort_form_alter(&$form, &$form_state, $form_id) {
 
     );
 } 
- 
-	
- 
- //}
  
   if($form_id == 'views_ui_edit_display_form' && $form['#help_topic'] == 'style-table') {
    
