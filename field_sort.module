@@ -1,61 +1,56 @@
 <?php
 // $Id:
 // For musticolumn sorting // 
-function field_sort_views_query_alter(&$view, &$query) {
-
-	if($view->style_options['sortable'] == 1){
-		$query->orderby = array();
-		//dsm($_POST['items']);
-		if(is_array($_POST['items'])){ //to avoid foreach warning
-			$i=0;
-			foreach($_POST['items'] as $sort_field => $sort_field_data)
-			{
-				if($sort_field_data["order"])
-					$query->orderby[$i] = $sort_field." ".$sort_field_data["order"];
-				$i++;
-			}	
-		}
-
-	}
+function field_sort_views_query_alter(&$view, &$query)  {
+  if ($view->style_options['sortable'] == 1)  {
+  $query->orderby = array();
+  //dsm($_POST['items']);
+  if  (is_array($_POST['items']))  { //to avoid foreach warning
+      $i=0;
+      foreach ($_POST['items'] as $sort_field => $sort_field_data)  {
+         if ($sort_field_data["order"])
+            $query->orderby[$i] = $sort_field . " " . $sort_field_data["order"];
+                 $i++;
+        }
+    }
+  }
 }
 
-function field_sort_views_pre_render(&$view) {
-	if($view->style_options['sortable'] == 1){
-	 		$view->attachment_before = drupal_get_form("custom_sort_reorder_form",$view->field);
- 	 		/* reordering view fields */
- 	 		if($_POST['reorder_columns'])
- 	 		{
-	 	 		if(is_array($_POST['items']))
-	 	 		{
-				$alias_map = array();
-	 	 		foreach($view->field as $column => $column_data) {
-				
-				    if(array_key_exists($column_data->field_alias, $alias_map)) {					
-					    foreach($alias_map as $key => $value) {
-						 $count =1;					
-						  $field_alias = $column_data->field_alias ."_". $count;
-						  if(!array_key_exists($field_alias,$alias_map)) {
-						    $alias_map[$field_alias] = $column; 	   
-						  }					     
-					     $count++; 						
-						}						
+function field_sort_views_pre_render(&$view)  {
+  if ($view->style_options['sortable'] == 1)  {
+        $view->attachment_before = drupal_get_form("custom_sort_reorder_form", $view->field);
+        /* reordering view fields */
+        if ($_POST['reorder_columns']) {
+            if (is_array($_POST['items'])) {
+            $alias_map = array();
+foreach ( $view->field as $column => $column_data )  {				
+                    if (array_key_exists($column_data->field_alias, $alias_map)) {
+					foreach ($alias_map as $key => $value) {
+                         $count = 1;					
+                         $field_alias = $column_data->field_alias ."_". $count;
+                          if (!array_key_exists($field_alias, $alias_map)) {
+                             $alias_map[$field_alias] = $column; 	   
+                            }					     
+                         $count++; 						
+                        }						
 						
-					}else {
+                    }
+					else  {
 					 $alias_map[$column_data->field_alias] = $column; 
-					}
+					 }
 					
 				}	
 			
-	 	 		foreach($_POST['items'] as $alias => $field){
+	 	 		foreach ($_POST['items'] as $alias => $field)  {
 						$reorderred_fields_keys[] = $alias_map[$alias];
 						unset($alias_map[$alias]);
 				}
-                foreach($alias_map as $alias => $field)
+                foreach ($alias_map as $alias => $field)
 						$reorderred_fields_keys[] = $field;				
 						
 	 	 		
 				
-				foreach($reorderred_fields_keys as $column)
+				foreach ($reorderred_fields_keys as $column)
 					$reorderred_fields[$column] =  $view->field[$column];
 				
 				$view->field = $reorderred_fields;	
@@ -65,31 +60,31 @@ function field_sort_views_pre_render(&$view) {
  	
 }
 
-function custom_sort_reorder_form($form_state,$fields) {           
+function custom_sort_reorder_form($form_state, $fields) {           
 	$i = 0;
 	$alias_field = array();
-  foreach($fields as $sort_field){
-  
+  foreach ($fields as $sort_field)  {
     
-	if(in_array($sort_field->field_alias, $alias_field)) {							
+	if (in_array($sort_field->field_alias, $alias_field))  {							
 		$count = 1;
-		 for($f=0; $f<count($alias_field);$f++) {
+		 for ($f=0; $f<count($alias_field);$f++)  {
 		   
 		   $field_alias = $sort_field->field_alias ."_". $count;
-		  if(!in_array($field_alias,$alias_field)) {
+		  if (!in_array($field_alias, $alias_field))  {
 			$alias_field[] = $field_alias;
             $sort_field->field_alias = 	$field_alias;
             break; 			
 		  }
           $count++;		  
 		 }				
-	 }else {
+	 }
+	 else  {
 	    $alias_field[] =  $sort_field->field_alias;
 	 }	
 
 
-  		if(!$sort_field->options['exclude'] && $sort_field->options['field_sort'] == 1)
-  			$sort_fields[] = array('id'=>$sort_field->field_alias,'title'=>$sort_field->options['label'],'group'=> $sort_field->definition['group'],'alias'=>$sort_field->options['id ']);
+  		if (!$sort_field->options['exclude'] && $sort_field->options['field_sort'] == 1)
+  			$sort_fields[] = array('id' => $sort_field->field_alias, 'title' => $sort_field->options['label'], 'group' => $sort_field->definition['group'], 'alias' => $sort_field->options['id ']);
 
  }
 
@@ -113,7 +108,7 @@ if($item['group'] != 'Global' && $item['group'] != 'Customfield' ) {
     $form['items'][$item['id']] = array(
       'title' => array(
         '#type' => 'markup',
-        '#value' => $item['title'],
+        '#value' => t('@title', array('@title' => $item['title'])),
       ),
       'weight' => array(
         '#type' => 'weight',
@@ -122,19 +117,20 @@ if($item['group'] != 'Global' && $item['group'] != 'Customfield' ) {
       ),
       'order' => array(
         '#type' => 'select',
-        '#options' => array(""=>"Unsorted","ASC"=>"Ascending","DESC"=>"Descending"),
-      ),
+        '#options' => array("" => "Unsorted", "ASC" => "Ascending", "DESC" => "Descending"),
+      ), 
 	  'id' => array(
         '#type' => 'hidden',
         '#value' => $item['alias']
       ),
     );
- }else {
+ }
+ else  {
     
 	$form['items'][$item['id']] = array(
       'title' => array(
         '#type' => 'markup',
-        '#value' => $item['title'],
+        '#value' => t('@title', array('@title' => $item['title'])),
       ),
       'weight' => array(
         '#type' => 'weight',
@@ -143,7 +139,7 @@ if($item['group'] != 'Global' && $item['group'] != 'Customfield' ) {
       ),
       'order' => array(
         '#type' => 'markup',
-        '#value' => 'not sortable ',
+        '#value' => t('not sortable '),
       ),
 	  'id' => array(
         '#type' => 'hidden',
@@ -182,9 +178,9 @@ function field_sort_custom_sort_reorder_form($form) {
 	
   drupal_add_tabledrag('draggable-table', 'order', 'sibling', 'weight-group');
   
-  $header = array('Sort order','Sort by', 'Weight');
+  $header = array('Sort order', 'Sort by', 'Weight');
   
-  if(is_array($_POST['items']))
+  if (is_array($_POST['items']))
   	$items = $_POST['items'];
   else
   	$items = array_flip(element_children($form['items']));
@@ -207,9 +203,9 @@ function theme_custom_sort_reorder_form($form) {
 	
   drupal_add_tabledrag('draggable-table', 'order', 'sibling', 'weight-group');
   
-  $header = array('Column order','Sort by', 'Weight');
+  $header = array('Column order', 'Sort by', 'Weight');
   
-  if(is_array($_POST['items']))
+  if (is_array($_POST['items']))
   	$items = $_POST['items'];
   else
   	$items = array_flip(element_children($form['items']));
@@ -231,15 +227,15 @@ function theme_custom_sort_reorder_form($form) {
 
 function field_sort_form_alter(&$form, &$form_state, $form_id) {
 
- if($form_id == 'views_ui_config_item_form') {
+ if ($form_id == 'views_ui_config_item_form') {
     $value = 0;
-   if($form_state['handler']->options['field_sort']){
+   if ($form_state['handler']->options['field_sort'])  {
     $value = $form_state['handler']->options['field_sort']; 
    }
   
   
    $section = $form['#section'];
-   $form['options']['field_sort'] = array (
+   $form['options']['field_sort'] = array(
    '#type' => 'checkbox', 
    '#title' => t('Field Sortable'), 
    '#weight' => 3, 
@@ -249,13 +245,13 @@ function field_sort_form_alter(&$form, &$form_state, $form_id) {
     );
 } 
  
-  if($form_id == 'views_ui_edit_display_form' && $form['#help_topic'] == 'style-table') {
+  if ($form_id == 'views_ui_edit_display_form' && $form['#help_topic'] == 'style-table') {
    
 	$sortable = 0;
-   if($form_state['view']->display_handler->options['style_options']['sortable']){
+   if ($form_state['view']->display_handler->options['style_options']['sortable']) {
     $sortable = $form_state['view']->display_handler->options['style_options']['sortable']; 
    } 
-	$form['style_options']['sortable'] = array (
+	$form['style_options']['sortable'] = array(
 	   '#type' => 'checkbox', 
 	   '#title' => t('Sortable'), 
 	   '#weight' => 3, 
